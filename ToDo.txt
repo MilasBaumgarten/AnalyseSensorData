@@ -1,0 +1,34 @@
+Format:
+	Tracking Data
+		TIME (VECTOR3 QUATERNION) * n
+	Sensor Data
+		TIME EDA ECG DELTATIME
+
+->
+	Input (Player only)
+		(VECTOR3 QUATERNION) * n
+	Output
+		EDA ECG
+
+Problems:
+	1) TIME (Tracking) != TIME (Sensor)
+	2) measurement errors
+	3) 2) -> Data is async
+	4) Data has to be synchronised
+
+Solutions:
+	1a) map Tracking onto Sensor
+			precision in Sensor Data is important because otherwise heart beats could be missed
+			Problem: how should the mapping be done without Sensor Data (learned network)
+	1b) accentuate heart beats
+			in this way the time from Tracking Data can be used
+			measurement errors could be masked by inserting "fake" heart beats
+			EDA Data can easily be smoothed
+	2a) fix with 1b)
+	3a) fix with 1b)
+	3b) estimate correct data
+			Problem: possibly incorrect
+	4a) send start & end message to Sensor Unit
+			fix start delay by cutting the beginning off of the tracking data (same for end but this time cut sensor data)
+	4b) somehow get correct start time
+			Problem: I don't know if the Arduino can do this
