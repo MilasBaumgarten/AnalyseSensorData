@@ -32,9 +32,6 @@
     <Compile Include="DrawSimpleGraphs.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="PrepareData.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="TestStuff.py">
       <SubType>Code</SubType>
     </Compile>

@@ -32,3 +32,10 @@ Solutions:
 			fix start delay by cutting the beginning off of the tracking data (same for end but this time cut sensor data)
 	4b) somehow get correct start time
 			Problem: I don't know if the Arduino can do this
+	4c) start and end at the same time (using Unity)
+
+Result:
+	1b)
+	2a)
+	3a)
+	4c)
