@@ -46,7 +46,6 @@ class Data(object):
 			self.LeftTracker.append(Transform(Position(line[0,15], line[0,16], line[0,17]), Rotation(line[0,18], line[0,19], line[0,20], line[0,21])))
 
 		self.tracking_x = np.array(tracking_x)
-		print(self.HMD[0].position.x)
 		
 		# calculate gradient and normalize ecg data
 		self.ecg_delta = self.calc_gradient(self.ecg, True)
@@ -190,6 +189,20 @@ class Data(object):
 		eda_synchronized.append(self.eda[index_sensor] + percentage * (self.eda[index_sensor + 1] - self.eda[index_sensor]))
 
 		self.ecg_synchronized = np.array(ecg_synchronized)
+		self.eda_synchronized = np.array(eda_synchronized)
 
-# TODO:
-#	synchronization: prioritise heart beats
+	# prepare data for Keras
+	def prepare_data_for_keras(self):
+		# combine arrays training
+		in_data = []
+		out_data = []
+
+		for i in range (0, len(self.tracking_x)):
+			in_data.append([self.HMD[i].position.x, self.HMD[i].position.y, self.HMD[i].position.z, self.HMD[i].rotation.x, self.HMD[i].rotation.y, self.HMD[i].rotation.z, self.HMD[i].rotation.w,
+							 self.LeftTracker[i].position.x, self.LeftTracker[i].position.y, self.LeftTracker[i].position.z, self.LeftTracker[i].rotation.x, self.LeftTracker[i].rotation.y, self.LeftTracker[i].rotation.z, self.LeftTracker[i].rotation.w,
+							 self.RightTracker[i].position.x, self.RightTracker[i].position.y, self.RightTracker[i].position.z, self.RightTracker[i].rotation.x, self.RightTracker[i].rotation.y, self.RightTracker[i].rotation.z, self.RightTracker[i].rotation.w])
+
+		for i in range (0, len(self.tracking_x)):
+			out_data.append([self.ecg_synchronized[i], self.eda_synchronized[i]])
+		
+		return (np.array(in_data), np.array(out_data))

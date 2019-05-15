@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>8d10ad29-0257-425c-818b-a50c8538d0dd</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>TestStuff.py</StartupFile>
+    <StartupFile>AnalyseSensorData.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
