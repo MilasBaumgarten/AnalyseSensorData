@@ -7,6 +7,9 @@ from keras.layers import LSTM
 
 import matplotlib.pyplot as plt
 
+import datetime
+import os
+
 import numpy as np
 
 from Data import Data
@@ -21,8 +24,8 @@ max_features = 1024
 min_heart_beat_delay = 20
 max_heart_beat_delay = 35
 average_heart_beate_delay = 25
-min_normalized_value = 0
-max_normalized_value = 1
+min_normalized_value = 1
+max_normalized_value = 2
 min_beat_delta = 40
 
 # Loss Result (40 Epochs)	Goal ~ 390
@@ -41,19 +44,29 @@ min_beat_delta = 40
 # poisson:							2:1 288.13986/197.53024
 # cosine_proximity:					2.2061598/2.46/2.539
 
-loss_function = losses.cosine_proximity
+# 100 Generations, 10 Epochs, Batch Size: 32
+# ecg normalized, eda notmalization: x / 1024
+# binary crossentropy: ~0.4 (goal ~0.2), no heart beat
+
+loss_function = losses.binary_crossentropy
 optimizer_function = "rmsprop"
 metrics_function = ["accuracy"]
+
+directory = datetime.datetime.now().strftime("%Y_%m_%d-%H_%M")
+filename = directory + "/generation"
+
+if not os.path.exists(directory):
+	os.makedirs(directory)
 
 def save_model(iteration):
 	# source: https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 	# source: https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model
 	model_json = model.to_json()
-	# with is similar to try/ catch but better(?)
-	with open("model" + str(iteration) + ".json", "w") as json_file:
-		json_file.write(model_json)
 
-	model.save_weights("model" + str(iteration) + ".h5")
+	# with is similar to try/ catch but better(?)
+	with open(filename + str(iteration) + ".json", "w") as json_file:
+		json_file.write(model_json)
+	model.save_weights(filename + str(iteration) + ".h5")
 
 def load_model(iteration):
 	# load json and create model
@@ -71,7 +84,9 @@ def load_model(iteration):
 	score = loaded_model.evaluate(in_test, out_test)
 	print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1]*100))
 
-train_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
+	return loaded_model
+
+test_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
 					"SensorData_2019-05-09-19-13-42_cleaned.txt",
 					min_beat_delta,
 					min_normalized_value,
@@ -80,7 +95,7 @@ train_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
 					max_heart_beat_delay,
 					average_heart_beate_delay)
 
-test_data = Data( "TrackingData_2019-05-09-19-19-31.txt",
+train_data = Data( "TrackingData_2019-05-09-19-19-31.txt",
 					"SensorData_2019-05-09-19-19-31.txt",
 					min_beat_delta,
 					min_normalized_value,
@@ -93,20 +108,24 @@ test_data = Data( "TrackingData_2019-05-09-19-19-31.txt",
 in_train, out_train = train_data.prepare_data_for_keras()
 in_test, out_test = test_data.prepare_data_for_keras()
 
+print(in_train)
+print(out_train)
+
 ##############
 # LSTM Stuff #
 ##############
 
 # prepare data shape for the LSTM
-in_train = in_train.reshape(len(train_data.tracking_x), 1, len(in_train[0]))
-in_test = in_test.reshape(len(test_data.tracking_x), 1, len(in_test[0]))
+in_train = np.reshape(in_train, (in_train.shape[0], in_train.shape[1], 1))
+in_test = np.reshape(in_test, (in_test.shape[0], in_test.shape[1], 1))
 
 # create model
 model = Sequential()
 #model.add(Dense(2, input_shape=(21,)))
 #model.add(Embedding(max_features, output_dim=256))
-model.add(LSTM(256, input_shape=(1, 21), activation="relu", recurrent_activation="hard_sigmoid", return_sequences=True))
-model.add(LSTM(128))
+#model.add(LSTM(256, input_shape=(21, 1), activation="relu", recurrent_activation="hard_sigmoid", return_sequences=True))
+model.add(LSTM(256, input_shape=(21, 1), activation="relu", recurrent_activation="hard_sigmoid"))
+#model.add(LSTM(128))
 model.add(Dropout(0.5))
 model.add(Dense(2, activation="relu"))
 
@@ -120,20 +139,23 @@ print(model.input_shape)
 print(model.output_shape)
 
 # train model
-for i in range(0, 4):
+for i in range(0, 10):
+	print("----------")
+	print(i + 1, "/", 10)
+	print("----------")
 	# save model every n epochs
-	model.fit(in_train, out_train, batch_size=32, epochs=10)
+	model.fit(in_train, out_train, batch_size=128, epochs=10)
 	save_model(i)
 
 # evaluate model
-score = model.evaluate(in_test, out_test, batch_size=16)
+score = model.evaluate(in_test, out_test, batch_size=128)
 print("%s: %.2f%%" % (model.metrics_names[1], score[1]*100))
 
 predictions = model.predict(in_test)
 
 combined_ecg = []
 combined_eda = []
-for i in range (0, 50):
+for i in range (0, 500):
 	combined_ecg.append([predictions[i][0], out_test[i][0]])
 	combined_eda.append([predictions[i][1], out_test[i][1]])
 

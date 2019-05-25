@@ -203,6 +203,6 @@ class Data(object):
 							 self.RightTracker[i].position.x, self.RightTracker[i].position.y, self.RightTracker[i].position.z, self.RightTracker[i].rotation.x, self.RightTracker[i].rotation.y, self.RightTracker[i].rotation.z, self.RightTracker[i].rotation.w])
 
 		for i in range (0, len(self.tracking_x)):
-			out_data.append([self.ecg_synchronized[i], self.eda_synchronized[i]])
+			out_data.append([self.ecg_synchronized[i], self.eda_synchronized[i] / 1024])
 		
 		return (np.array(in_data), np.array(out_data))
