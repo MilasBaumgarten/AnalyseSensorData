@@ -1,9 +1,9 @@
 from keras.models import Sequential
 from keras.models import model_from_json
-from keras.layers import Dense, Dropout
+from keras.layers import Dropout
 from keras import losses
 from keras.layers import Embedding
-from keras.layers import LSTM
+from keras.layers import LSTM, Activation, TimeDistributed, Dense
 
 import matplotlib.pyplot as plt
 
@@ -13,11 +13,6 @@ import os
 import numpy as np
 
 from Data import Data
-
-# research:
-#	https://www.youtube.com/results?search_query=improve+lstm+accuracy
-#	https://www.youtube.com/watch?v=j_pJmXJwMLA&t=0s
-#	https://www.youtube.com/watch?v=_DPRt3AcUEY&t=0s
 
 max_features = 1024
 
@@ -44,6 +39,9 @@ min_beat_delta = 40
 # poisson:							2:1 288.13986/197.53024
 # cosine_proximity:					2.2061598/2.46/2.539
 
+# Hidden: ReLU
+# Output: Softmax - Classification
+#		  Linear  - Regression
 # 100 Generations, 10 Epochs, Batch Size: 32
 # ecg normalized, eda notmalization: x / 1024
 # binary crossentropy: ~0.4 (goal ~0.2), no heart beat
@@ -86,8 +84,8 @@ def load_model(iteration):
 
 	return loaded_model
 
-test_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
-					"SensorData_2019-05-09-19-13-42_cleaned.txt",
+train_data = Data( "TrackingData_2019-05-09-19-19-31.txt",
+					"SensorData_2019-05-09-19-19-31.txt",
 					min_beat_delta,
 					min_normalized_value,
 					max_normalized_value,
@@ -95,8 +93,8 @@ test_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
 					max_heart_beat_delay,
 					average_heart_beate_delay)
 
-train_data = Data( "TrackingData_2019-05-09-19-19-31.txt",
-					"SensorData_2019-05-09-19-19-31.txt",
+test_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
+					"SensorData_2019-05-09-19-13-42_cleaned.txt",
 					min_beat_delta,
 					min_normalized_value,
 					max_normalized_value,
@@ -119,58 +117,65 @@ print(out_train)
 in_train = np.reshape(in_train, (in_train.shape[0], in_train.shape[1], 1))
 in_test = np.reshape(in_test, (in_test.shape[0], in_test.shape[1], 1))
 
-# create model
-model = Sequential()
-#model.add(Dense(2, input_shape=(21,)))
-#model.add(Embedding(max_features, output_dim=256))
-#model.add(LSTM(256, input_shape=(21, 1), activation="relu", recurrent_activation="hard_sigmoid", return_sequences=True))
-model.add(LSTM(256, input_shape=(21, 1), activation="relu", recurrent_activation="hard_sigmoid"))
-#model.add(LSTM(128))
-model.add(Dropout(0.5))
-model.add(Dense(2, activation="relu"))
+## create model
+#model = Sequential()
+##model.add(Dense(2, input_shape=(1,21)))
+##model.add(Embedding(max_features, output_dim=256))
+##model.add(LSTM(256, input_shape=(1, 21), activation="relu", recurrent_activation="hard_sigmoid", return_sequences=True))
+#model.add(LSTM(256, input_shape=(1, 21), return_sequences=True))
+#model.add(LSTM(256))
+##model.add(TimeDistributed(Dense(21)))																				# what does this do?
+#model.add(Activation("softmax"))
+##model.add(LSTM(128, activation="relu", recurrent_activation="hard_sigmoid"))
+#model.add(Dropout(0.5))
+#model.add(Dense(2, activation="relu"))
 
-# compile model
-#model.compile(loss="binary_crossentropy",
-#				optimizer="rmsprop",
-#				metrics=["accuracy"])
-model.compile(loss=loss_function, optimizer=optimizer_function, metrics=metrics_function)
+## compile model
+#model.compile(loss=loss_function, optimizer=optimizer_function, metrics=metrics_function)
 
-print(model.input_shape)
-print(model.output_shape)
-
-# train model
-for i in range(0, 10):
-	print("----------")
-	print(i + 1, "/", 10)
-	print("----------")
-	# save model every n epochs
-	model.fit(in_train, out_train, batch_size=128, epochs=10)
-	save_model(i)
-
-# evaluate model
-score = model.evaluate(in_test, out_test, batch_size=128)
-print("%s: %.2f%%" % (model.metrics_names[1], score[1]*100))
+#print(model.input_shape)
+#print(model.output_shape)
 
 predictions = model.predict(in_test)
+# train model
+#for i in range(0, 1):
+#	# save model every n epochs
+#	print("-----------------------")
+#	print (i + 1, "/", 4)
+#	print("-----------------------")
+#	model.fit(in_train, out_train, batch_size=32, epochs=10)
+#	save_model(i)
+
+## evaluate model
+#score = model.evaluate(in_test, out_test, batch_size=16)
+#print("%s: %.2f%%" % (model.metrics_names[1], score[1]*100))
+
+#predictions = model.predict(in_test)
 
 combined_ecg = []
 combined_eda = []
 for i in range (0, 500):
-	combined_ecg.append([predictions[i][0], out_test[i][0]])
-	combined_eda.append([predictions[i][1], out_test[i][1]])
+	combined_ecg.append([out_test[i][0]])
+	combined_eda.append([out_test[i][1]])
 
 plt.figure(1)
-plt.subplot(211)
+plt.subplot(221)
 plt.plot(combined_ecg)
 
-plt.subplot(212)
+plt.subplot(222)
 plt.plot(combined_eda)
+
+print(train_data.sensor_x)
+print(np.array(train_data.ecg_normalized))
+
+plt.subplot(223)
+plt.plot(train_data.sensor_x, np.array(train_data.ecg_normalized))
 
 plt.show()
 
 #for i in range(0, len(in_test)):
-for i in range(0, 50):
-	print(predictions[i], " - ", out_test[i])
+#for i in range(0, 500):
+#	print(predictions[i], " - ", out_test[i])
 
 #for i in range(0, 2):
 #	load_model(i)

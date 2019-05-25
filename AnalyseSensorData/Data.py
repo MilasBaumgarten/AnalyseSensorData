@@ -71,7 +71,6 @@ class Data(object):
 		sensor_lines = sensor.split("\n")
 
 		# TODO: make sensor_lines and tracking_lines equal length
-		# TODO: synchronize sensor data and tracking data
 
 		# add player tracking data values to feature vectors
 		for line in tracking_lines:
@@ -130,6 +129,7 @@ class Data(object):
 			last = i
 		return normalized
 
+	# TODO: calculate delay by using time not index!
 	# calculate time between heart (suspected) beats
 	def calculate_missed_heart_beats(self, min_val, max_val, min_delay, max_delay, average_delay):
 		self.beat_delay.clear()
@@ -166,7 +166,7 @@ class Data(object):
 
 		for i in range (0, len(self.tracking_x) - 1):
 			# percentage = percentage at which point the next tracking date is in comparison to the current sensor date and the next one
-			percentage = 0
+			percentage = (self.sensor_x[index_sensor + 1] - self.sensor_x[index_sensor]) / (self.tracking_x[i] - self.sensor_x[index_sensor])
 			if ((percentage < 0.5 and self.ecg_normalized[index_sensor] == self.HIGH) or not (high_recognized)):
 				ecg_synchronized.append(self.HIGH)
 				high_recognized = True
