@@ -21,7 +21,6 @@ class Transform:
 	rotation : Rotation
 
 class Data(object):
-	beat_delay = []
 	HMD = RightTracker = LeftTracker = []
 
 	HIGH = 0
@@ -54,7 +53,9 @@ class Data(object):
 		# try to fix measurment errors by inserting missed heartbeats and deleting
 		# duplicate heart beats
 		for i in range(0, 1):
-			self.calculate_missed_heart_beats(self.LOW, self.HIGH, min_heart_beat_delay, max_heart_beat_delay, average_heart_beat_delay)
+			self.calculate_missed_heart_beats(self.LOW, self.HIGH, 60000 / min_heart_beat_delay,
+																   60000 / max_heart_beat_delay,
+																   60000 / average_heart_beat_delay)
 
 		self.synchronize()
 
@@ -132,14 +133,14 @@ class Data(object):
 	# TODO: calculate delay by using time not index!
 	# calculate time between heart (suspected) beats
 	def calculate_missed_heart_beats(self, min_val, max_val, min_delay, max_delay, average_delay):
-		self.beat_delay.clear()
 		last = 0
 		for i in range(0, len(self.ecg_normalized)):
 			# start check when a heart beat was found
 			if (self.ecg_normalized[i] == max_val):
+				delta_t = (self.sensor_x[i] - self.sensor_x[last])
 				index_delta = (i - last)
 				# remove a heart beat if it seems to be too fast aka duplicate
-				if (index_delta < min_delay):
+				if (delta_t < min_delay):
 					# check which gradient was higher
 					if (self.ecg_delta[last] < self.ecg_delta[i]):
 						self.ecg_normalized[last] = min_val
@@ -147,13 +148,10 @@ class Data(object):
 						self.ecg_normalized[i] = min_val
 				else :
 					# insert missed heart beats
-					if (index_delta > max_delay):
-						missed_beats = index_delta // average_delay
+					if (delta_t > max_delay):
+						missed_beats = int(np.round(delta_t // average_delay))
 						for j in range(1, missed_beats):
-							self.ecg_normalized[last + int(np.floor((j / missed_beats) * index_delta))] = max_val
-							self.beat_delay.append(int(np.floor((1 / missed_beats) * index_delta)))
-					else:
-						self.beat_delay.append(index_delta)
+							self.ecg_normalized[last + int(np.round((j / missed_beats) * index_delta))] = max_val * 2
 					last = i
 		return
 

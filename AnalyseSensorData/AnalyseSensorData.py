@@ -16,11 +16,11 @@ from Data import Data
 
 max_features = 1024
 
-min_heart_beat_delay = 20
-max_heart_beat_delay = 35
-average_heart_beate_delay = 25
-min_normalized_value = 1
-max_normalized_value = 2
+min_heart_rate = 50
+max_heart_rate = 140
+average_heart_rate = 80
+min_normalized_value = 0
+max_normalized_value = 500
 min_beat_delta = 40
 
 # Loss Result (40 Epochs)	Goal ~ 390
@@ -89,18 +89,18 @@ train_data = Data( "TrackingData_2019-05-09-19-19-31.txt",
 					min_beat_delta,
 					min_normalized_value,
 					max_normalized_value,
-					min_heart_beat_delay,
-					max_heart_beat_delay,
-					average_heart_beate_delay)
+					min_heart_rate,
+					max_heart_rate,
+					average_heart_rate)
 
 test_data = Data( "TrackingData_2019-05-09-19-13-42_cleaned.txt",
 					"SensorData_2019-05-09-19-13-42_cleaned.txt",
 					min_beat_delta,
 					min_normalized_value,
 					max_normalized_value,
-					min_heart_beat_delay,
-					max_heart_beat_delay,
-					average_heart_beate_delay)
+					min_heart_rate,
+					max_heart_rate,
+					average_heart_rate)
 
 # combine arrays training
 in_train, out_train = train_data.prepare_data_for_keras()
