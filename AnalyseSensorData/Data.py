@@ -53,8 +53,8 @@ class Data(object):
 		# try to fix measurment errors by inserting missed heartbeats and deleting
 		# duplicate heart beats
 		for i in range(0, 1):
-			self.calculate_missed_heart_beats(self.LOW, self.HIGH, 60000 / min_heart_beat_delay,
-																   60000 / max_heart_beat_delay,
+			self.calculate_missed_heart_beats(self.LOW, self.HIGH, 60000 / max_heart_beat_delay,
+																   60000 / min_heart_beat_delay,
 																   60000 / average_heart_beat_delay)
 
 		self.synchronize()
@@ -130,7 +130,6 @@ class Data(object):
 			last = i
 		return normalized
 
-	# TODO: calculate delay by using time not index!
 	# calculate time between heart (suspected) beats
 	def calculate_missed_heart_beats(self, min_val, max_val, min_delay, max_delay, average_delay):
 		last = 0
@@ -144,14 +143,16 @@ class Data(object):
 					# check which gradient was higher
 					if (self.ecg_delta[last] < self.ecg_delta[i]):
 						self.ecg_normalized[last] = min_val
+						last = i
 					else:
 						self.ecg_normalized[i] = min_val
 				else :
 					# insert missed heart beats
 					if (delta_t > max_delay):
 						missed_beats = int(np.round(delta_t // average_delay))
-						for j in range(1, missed_beats):
-							self.ecg_normalized[last + int(np.round((j / missed_beats) * index_delta))] = max_val * 2
+						print(delta_t, missed_beats)
+						for j in range(1, missed_beats + 1):
+							self.ecg_normalized[last + int(np.round((j / (missed_beats + 1)) * index_delta))] = max_val
 					last = i
 		return
 
