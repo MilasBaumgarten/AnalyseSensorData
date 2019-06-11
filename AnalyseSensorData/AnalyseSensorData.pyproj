@@ -22,17 +22,8 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AnalogPlot.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="AnalyseSensorData.py" />
     <Compile Include="Data.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DrawSimpleGraphs.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TestStuff.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

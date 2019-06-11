@@ -150,7 +150,6 @@ class Data(object):
 					# insert missed heart beats
 					if (delta_t > max_delay):
 						missed_beats = int(np.round(delta_t // average_delay))
-						print(delta_t, missed_beats)
 						for j in range(1, missed_beats + 1):
 							self.ecg_normalized[last + int(np.round((j / (missed_beats + 1)) * index_delta))] = max_val
 					last = i
