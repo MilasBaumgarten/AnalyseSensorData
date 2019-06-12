@@ -30,12 +30,16 @@ class Data(object):
 		self.HIGH = max_val
 		self.LOW = min_val
 
+		print(">> get raw data")
+
 		# get raw data and separate into specific arrays
 		tracking_full, sensor_full = self.extract(tracking_data_file, sensor_data_file)
 		self.sensor_x = np.squeeze(np.asarray(sensor_full[:,np.array([True, False, False, False])]))
 		self.ecg = np.squeeze(np.asarray(sensor_full[:,np.array([False, False, True, False])]))
 		self.eda = np.squeeze(np.asarray(sensor_full[:,np.array([False, True, False, False])]))
 		
+		print(">> format tracking data")
+
 		# format tracking data
 		tracking_x =  []
 		for line in tracking_full:
@@ -46,10 +50,13 @@ class Data(object):
 
 		self.tracking_x = np.array(tracking_x)
 		
+		print(">> normalize ecg data")
 		# calculate gradient and normalize ecg data
 		self.ecg_delta = self.calc_gradient(self.ecg, True)
 		self.ecg_normalized = self.normalize(self.ecg_delta, min_delta, min_val, max_val)
 
+		print(">> fix ecg measurement errors")
+	
 		# try to fix measurment errors by inserting missed heartbeats and deleting
 		# duplicate heart beats
 		for i in range(0, 1):
@@ -57,39 +64,48 @@ class Data(object):
 																   60000 / min_heart_beat_delay,
 																   60000 / average_heart_beat_delay)
 
+		print(">> synchronize sensor and tracking data")
 		self.synchronize()
+
+		print(">> calculate heart rate")
+		self.calculate_heart_rate()
+
+	def format_raw_data(self, lines, value_length, error_prefix):
+		list = []
+		line_number = 0
+		for line in lines:
+			
+			line_number += 1
+			line = line.replace("\t", " ")
+			line = line.replace(",", ".")
+			line = line.replace(";", "")
+			row = line.split(" ")
+			# add all relevant elements to the feature vectors (from a to (exclusive) b)
+			try:
+				values = [float(x) for x in row[0:value_length]]
+				# find incomplete lines
+				if (len(values) == value_length):
+					list.append(values)
+				else:
+					print(error_prefix, ": Error in line: ", line_number, ": ", line)
+			# find incorrect lines
+			except ValueError:
+				print(error_prefix, ": Error with line: ", line_number, ": ", line)
+		return list
 
 	# Source: "The Best Way to Prepare a Dataset Easily" - Siraj Raval - https://www.youtube.com/watch?v=0xVqLJe9_CY&t=437s
 	def extract(self, tracking_filename, sensor_filename):
-		# arrays to hod the labels and the feature vectors
-		labels = []
-		fvecs = []
-
 		tracking = open(tracking_filename, "r").read()
 		tracking_lines = tracking.split("\n")
 
 		sensor = open(sensor_filename, "r").read()
 		sensor_lines = sensor.split("\n")
 
-		# TODO: make sensor_lines and tracking_lines equal length
-
 		# add player tracking data values to feature vectors
-		for line in tracking_lines:
-			try:
-				line = line.replace("\t", " ")
-				line = line.replace(",", ".")
-				row = line.split(" ")
-				# add all relevant elements to the feature vectors (from a to (exclusive)
-				# b)
-				fvecs.append([float(x) for x in row[0:22]])
-			except:
-				print("Error with line: " + line)
+		fvecs = self.format_raw_data(tracking_lines, 22, "Tracking Data")
 
-		# add sensor data to labels
-		for line in sensor_lines:
-			line = line.replace(";", "")
-			row = line.split(" ")
-			labels.append([float(x) for x in row[0:4]])
+		# add player sensor data values to labels
+		labels = self.format_raw_data(sensor_lines, 4, "Sensor Data")
 
 		# remove time delay from sensor data
 		sensor_delay = labels[0][0]
@@ -164,7 +180,10 @@ class Data(object):
 
 		for i in range (0, len(self.tracking_x) - 1):
 			# percentage = percentage at which point the next tracking date is in comparison to the current sensor date and the next one
-			percentage = (self.sensor_x[index_sensor + 1] - self.sensor_x[index_sensor]) / (self.tracking_x[i] - self.sensor_x[index_sensor])
+			percentage = 0
+			if ((self.tracking_x[i] - self.sensor_x[index_sensor]) != 0):
+				percentage = (self.sensor_x[index_sensor + 1] - self.sensor_x[index_sensor]) / (self.tracking_x[i] - self.sensor_x[index_sensor])
+
 			if ((percentage < 0.5 and self.ecg_normalized[index_sensor] == self.HIGH) or not (high_recognized)):
 				ecg_synchronized.append(self.HIGH)
 				high_recognized = True
@@ -188,6 +207,32 @@ class Data(object):
 
 		self.ecg_synchronized = np.array(ecg_synchronized)
 		self.eda_synchronized = np.array(eda_synchronized)
+
+	def calculate_heart_rate(self):
+		last = 0
+		f_last = np.array([0, 0])
+		f_i = np.array([0, 0])
+		frequency = [0]
+		for i in range(1, len(self.ecg_normalized) - 1):
+			if (self.ecg_normalized[i] == self.HIGH):
+				if (last == 0):
+					last = i
+				else:
+					# calculate heart rate
+					f_last = np.copy(f_i)
+					f_i = np.array([60000 / (self.sensor_x[i] - self.sensor_x[last]), i])
+					last = i
+
+					# lerp heart rate
+					delta = int(f_i[1] - f_last[1])
+					for i in range (0, delta):
+						frequency.append(f_last[0] + ((f_i[0] - f_last[0]) * (i / delta)))
+
+		# input last values
+		delta = int(len(self.ecg_normalized) - f_i[1] - 1)
+		for i in range (0, delta):
+			frequency.append(f_last[0] + ((0 - f_last[0]) * (i / delta)))
+		self.heart_rate = np.array(frequency)
 
 	# prepare data for Keras
 	def prepare_data_for_keras(self):
