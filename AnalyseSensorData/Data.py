@@ -68,7 +68,10 @@ class Data(object):
 		self.synchronize()
 
 		print(">> calculate heart rate")
-		self.calculate_heart_rate()
+		self.calculate_heart_rate(self.sensor_x, self.ecg_normalized)
+
+		print(">> check data")
+		self.check_data()
 
 	def format_raw_data(self, lines, value_length, error_prefix):
 		list = []
@@ -92,6 +95,11 @@ class Data(object):
 			except ValueError:
 				print(error_prefix, ": Error with line: ", line_number, ": ", line)
 		return list
+
+	def check_data(self):
+		for i in range (1, len(self.sensor_x)):
+			if (self.sensor_x[i] == self.sensor_x[i-1]):
+				print("Sensor Time Error on Line: ", i)
 
 	# Source: "The Best Way to Prepare a Dataset Easily" - Siraj Raval - https://www.youtube.com/watch?v=0xVqLJe9_CY&t=437s
 	def extract(self, tracking_filename, sensor_filename):
@@ -179,6 +187,11 @@ class Data(object):
 		high_recognized = False
 
 		for i in range (0, len(self.tracking_x) - 1):
+			# fix out of bounds if sensor data is smaller then tracking data
+			if (index_sensor >= len(self.sensor_x) - 1):
+				index_sensor -= 1
+				break
+
 			# percentage = percentage at which point the next tracking date is in comparison to the current sensor date and the next one
 			percentage = 0
 			if ((self.tracking_x[i] - self.sensor_x[index_sensor]) != 0):
@@ -198,6 +211,11 @@ class Data(object):
 					high_recognized = False
 				index_sensor += 1
 
+				# fix out of bounds if sensor data is smaller then tracking data
+				if (index_sensor >= len(self.sensor_x) - 1):
+					index_sensor -= 1
+					break
+
 		# add last data
 		if ((percentage < 0.5 and self.ecg_normalized[index_sensor] == self.HIGH) or not (high_recognized)):
 			ecg_synchronized.append(self.HIGH)
@@ -208,19 +226,20 @@ class Data(object):
 		self.ecg_synchronized = np.array(ecg_synchronized)
 		self.eda_synchronized = np.array(eda_synchronized)
 
-	def calculate_heart_rate(self):
+	def calculate_heart_rate(self, x, y):
 		last = 0
 		f_last = np.array([0, 0])
 		f_i = np.array([0, 0])
 		frequency = [0]
-		for i in range(1, len(self.ecg_normalized) - 1):
-			if (self.ecg_normalized[i] == self.HIGH):
+		for i in range(0, len(y) - 1):
+			if (y[i] == self.HIGH):
 				if (last == 0):
 					last = i
+					f_last = np.array([60000 / x[i], i])
 				else:
 					# calculate heart rate
 					f_last = np.copy(f_i)
-					f_i = np.array([60000 / (self.sensor_x[i] - self.sensor_x[last]), i])
+					f_i = np.array([60000 / (x[i] - x[last]), i])
 					last = i
 
 					# lerp heart rate
@@ -229,7 +248,7 @@ class Data(object):
 						frequency.append(f_last[0] + ((f_i[0] - f_last[0]) * (i / delta)))
 
 		# input last values
-		delta = int(len(self.ecg_normalized) - f_i[1] - 1)
+		delta = int(len(x) - f_i[1] - 1)
 		for i in range (0, delta):
 			frequency.append(f_last[0] + ((0 - f_last[0]) * (i / delta)))
 		self.heart_rate = np.array(frequency)
@@ -249,3 +268,17 @@ class Data(object):
 			out_data.append([self.ecg_synchronized[i], self.eda_synchronized[i] / 1024])
 		
 		return (np.array(in_data), np.array(out_data))
+
+
+	def save_to_file(self, filename, header, time, ecg, ecg_norm, heart_rate, eda):
+		file = open(filename, "w")
+		file.write(header)
+	
+		for i in range(0, len(time)):
+			
+			date = str(time[i]) + " " + str(ecg[i]) + " " + str(ecg_norm[i]) + " " + str(heart_rate[i]) + " " + str(eda[i]) + "\n"
+			#for value in data[i]:
+			#	date += str(value) + " "
+			file.write(date)
+
+		file.close()

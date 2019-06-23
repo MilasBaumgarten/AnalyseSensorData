@@ -33,7 +33,15 @@
   <ItemGroup>
     <Content Include="SensorData_2019-05-09-19-13-42.txt" />
     <Content Include="SensorData_2019-05-09-19-19-31.txt" />
+    <Content Include="SensorData_2019-06-12-13-58-08_Bastian.txt" />
     <Content Include="SensorData_2019-06-12-14-09-52_Tobi.txt" />
+    <Content Include="SensorData_2019-06-12-14-23-59_Simon.txt" />
+    <Content Include="SensorData_2019-06-12-14-43-52_Isa.txt" />
+    <Content Include="SensorData_2019-06-12-14-58-58_Juliane.txt" />
+    <Content Include="SensorData_2019-06-12-15-14-22_Mareike_ohne_Telemetrie.txt" />
+    <Content Include="SensorData_2019-06-12-15-40-17_Sebastian.txt" />
+    <Content Include="SensorData_2019-06-12-15-51-06_Mareike.txt" />
+    <Content Include="SensorData_2019-06-12-16-03-18_Manuel_Heinzig.txt" />
     <Content Include="SensorData_2019-06-12-16-17-01_Milas.txt" />
     <Content Include="TrackingData_2019-05-09-19-13-42.txt" />
     <Content Include="TrackingData_2019-05-09-19-19-31.txt" />

@@ -1,0 +1,25 @@
+x_bpm
+t = x_bpm / 60sec
+t = (x_bpm) / 60 |*60
+t * 60 = x_bpm
+
+
+
+c/(m*m) = c, q.e.d
+s * 1000 * s = c/m
+
+f = 1/T
+
+1/m = 1/1000s = 60/10000m
+
+
+489 ms = 2,04498 Hz = 122,694 bpm
+
+60.000 / t
+
+
+Coding Errors:
+! ~ 1
+" = 2
+NUL = " "
+???R = linebreak
