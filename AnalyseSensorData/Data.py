@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 import sys
+import os
 
 @dataclass
 class Position:
@@ -64,8 +65,9 @@ class Data(object):
 																   60000 / min_heart_beat_delay,
 																   60000 / average_heart_beat_delay)
 
-		print(">> synchronize sensor and tracking data")
-		self.synchronize()
+		# Todo make possible to ignore (eg. if i only use sensor data I shouldn't need to synchronize it)
+		#print(">> synchronize sensor and tracking data")
+		#self.synchronize()
 
 		print(">> calculate heart rate")
 		self.calculate_heart_rate(self.sensor_x, self.ecg_normalized)
@@ -254,7 +256,7 @@ class Data(object):
 		self.heart_rate = np.array(frequency)
 
 	# prepare data for Keras
-	def prepare_data_for_keras(self):
+	def prepare_data_for_keras(self, synchronized = True):
 		# combine arrays training
 		in_data = []
 		out_data = []
@@ -264,19 +266,34 @@ class Data(object):
 							 self.LeftTracker[i].position.x, self.LeftTracker[i].position.y, self.LeftTracker[i].position.z, self.LeftTracker[i].rotation.x, self.LeftTracker[i].rotation.y, self.LeftTracker[i].rotation.z, self.LeftTracker[i].rotation.w,
 							 self.RightTracker[i].position.x, self.RightTracker[i].position.y, self.RightTracker[i].position.z, self.RightTracker[i].rotation.x, self.RightTracker[i].rotation.y, self.RightTracker[i].rotation.z, self.RightTracker[i].rotation.w])
 
-		for i in range (0, len(self.tracking_x)):
-			out_data.append([self.ecg_synchronized[i], self.eda_synchronized[i] / 1024])
+		if (synchronized):
+			for i in range (0, len(self.tracking_x)):
+				out_data.append([self.ecg_synchronized[i], self.eda_synchronized[i] / 1024])
+		else:
+			for i in range (0, len(self.sensor_x)):
+				out_data.append([self.ecg[i], self.eda[i] / 1024])
 		
 		return (np.array(in_data), np.array(out_data))
 
+	# should use synchronized data?
+	def save_data(self, name):
+		directory = name
+		filename = directory + "/data.txt"
 
-	def save_to_file(self, filename, header, time, ecg, ecg_norm, heart_rate, eda):
+		if not os.path.exists(directory):
+			os.makedirs(directory)
+
+		if (os.path.isfile(filename)):
+			os.remove(filename)
+
+		print("save sensor data to file")
+
 		file = open(filename, "w")
-		file.write(header)
+		file.write("Time\tECG\tECG_Normalized\tHeart_Rate\tEDA\n")
 	
-		for i in range(0, len(time)):
+		for i in range(0, len(self.sensor_x)):
 			
-			date = str(time[i]) + " " + str(ecg[i]) + " " + str(ecg_norm[i]) + " " + str(heart_rate[i]) + " " + str(eda[i]) + "\n"
+			date = str(self.sensor_x[i]) + " " + str(self.ecg[i]) + " " + str(self.ecg_normalized[i]) + " " + str(self.heart_rate[i]) + " " + str(self.eda[i]) + "\n"
 			#for value in data[i]:
 			#	date += str(value) + " "
 			file.write(date)
