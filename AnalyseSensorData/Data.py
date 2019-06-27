@@ -156,6 +156,7 @@ class Data(object):
 			last = i
 		return normalized
 
+	# Try: calculate average delay with surounding heart beats
 	# calculate time between heart (suspected) beats
 	def calculate_missed_heart_beats(self, min_val, max_val, min_delay, max_delay, average_delay):
 		last = 0
