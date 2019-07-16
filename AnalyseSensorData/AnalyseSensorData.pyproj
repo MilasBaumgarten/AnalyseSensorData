@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>8d10ad29-0257-425c-818b-a50c8538d0dd</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>AnalyseSensorData.py</StartupFile>
+    <StartupFile>Test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -24,6 +24,9 @@
   <ItemGroup>
     <Compile Include="AnalyseSensorData.py" />
     <Compile Include="Data.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Test.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
